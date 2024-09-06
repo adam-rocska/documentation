@@ -123,12 +123,18 @@ To return and refund a product,
 Manage the cash register
 ========================
 
+<<<<<<< 17.0
 To add or take out cash from the register, click the **menu icon** in the upper right corner of your
 screen and :guilabel:`Cash In/Out`.
 
 .. image:: point_of_sale/menu-button.png
    :alt: Dropdown menu to close a POS session, reach the backend, add or take cash out or check
          orders
+||||||| c7b36d6a68cd7ac0cb5e0bc6d540f9a9dcb47abb
+=======
+To add or take out cash to/from the register, click :guilabel:`Cash In/Out` on the upper left side
+of the screen.
+>>>>>>> 49ff4fee6687f127133d758a18b761a6eb3ead27
 
 Doing so opens a pop-up window on which you can select :guilabel:`Cash In` or :guilabel:`Cash Out`,
 enter the amount and the reason, and click :guilabel:`Confirm`.
