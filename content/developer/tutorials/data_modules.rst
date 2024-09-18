@@ -38,7 +38,7 @@ At the end of this tutorial, we will be able to achieve the following in our app
 Module Structure
 ================
 
-Like in any developmnet project, a clear structure makes it easier to manage and maintain the code.
+Like in any developmntn project, a clear structure makes it easier to manage and maintain the code.
 
 Whilst in normal Odoo modules, you will have a mix of Python and XML files, in this case, we will
 only have XML files. Therefore, it is expected that your work tree will look something like this:
@@ -187,7 +187,7 @@ defined as such in data files:
             <field name="model_id" ref="estate.model_real_estate_property" />
             <field name="name">x_description</field>
             <field name="field_description">Description</field>
-            <field name="ttype">htlm</field>
+            <field name="ttype">html</field>
         </record>
 
         <record model="ir.model.fields" id="field_real_estate_property_postcode">
@@ -361,6 +361,8 @@ In the case of many2one fields, several attributes can be set to detail the rela
 
     - Add an action, list view and menu item for the ``x_estate.property.type`` model
 
+    - Add Access Rights to the ``x_estate.property.type`` model to allow access to users
+
     - Create the following fields on the ``x_estate.property`` model:
 
     ========================= ====================================== =======================
@@ -370,6 +372,8 @@ In the case of many2one fields, several attributes can be set to detail the rela
     x_partner_id (buyer)      Many2one (``res.partner``)
     x_user_id (salesperson)   Many2one (``res.users``)
     ========================= ====================================== =======================
+
+    - Include the new fields in the form view of the ``x_estate.property`` model
 
 Many2many
 ---------
@@ -405,13 +409,17 @@ the Odoo ORM will be able to determine the correct relation table and columns to
 
     - Add an action, list view and menu item for the ``x_estate.property.tag`` model
 
+    - Add Access Rights to the ``x_estate.property.tag`` model to allow access to users
+
     - Create the following fields on the ``x_estate.property`` model:
 
-    ========================= ==========================
+    ========================= ======================================
     Field                     Type                      
-    ========================= ==========================
+    ========================= ======================================
     x_property_tag_ids        Many2many (``x_estate.property.tag``)
-    ========================= ==========================
+    ========================= ======================================
+
+    - Include the new field in the form view of the ``x_estate.property`` model
 
 
 One2many
@@ -441,6 +449,8 @@ to link to. Another attribute must be set to control the relation:
     x_partner_id              Many2one (``res.partner``)         required
     x_property_id             Many2one (``x_estate.property``)   required
     ========================= ================================== ======================= ===================
+
+    - Add Access Rights to the ``x_estate.property.offer`` model to allow access to users
 
     - Create a tree view and a form view with the price, partner_id and status fields.
       No need to create an action or a menu.
@@ -494,7 +504,7 @@ areas, we can add the following code to our data module:
             <field name="name">x_total_area</field>
             <field name="field_description">Total Area</field>
             <field name="ttype">float</field>
-            <field name="depends">living_area,garden_area</field>
+            <field name="depends">x_living_area,x_garden_area</field>
             <field name="compute"><![CDATA[ 
     for property in self:
         property['x_total_area'] = property.x_living_area + property.x_garden_area
@@ -634,7 +644,8 @@ add the following :ref:`button <reference/view_architectures/form/button>` node 
 
     - Add a server action to the ``x_estate.property.offer`` model that sets the ``x_status``
       field of an offer to ``Accepted`` and update the selling price and buyer of the property
-      to which the offer is attached accordingly
+      to which the offer is attached accordingly. This action also marks all the other offers
+      on the same property as ``Refused``.
     - Include a button in the embedded list view of offers that allows to execute this action
 
 Automation Rules
@@ -660,7 +671,7 @@ Automation Rules are particularly useful to tie a data module to an existing sta
 module. Since data modules cannot override methods, tying automation to life-cycle changes
 of standard models is a common way to extend standard modules. A typical example would be
 an integration with the ``Sales`` app of Odoo. Let's imagine that your Real Estate module
-instegrates with the Sales application so that when a specific product is sold (e.g. a quote
+integrates with the Sales application so that when a specific product is sold (e.g. a quote
 for managing the sale of a property), you want to automatically create a new property
 record in your module.
 
@@ -683,19 +694,24 @@ the automation rule itself.
         <field name="state">code</field>
         <field name="code"><![CDATA[
     for order in records:
+        property_type = env['x_estate.property.type'].sudo().search([('x_name', '=', 'Other')], limit=1)
         property = env['x_estate.property'].sudo().create({
-            'x_name': sale_order.name,
+            'x_name': order.name,
             'x_expected_price': 0,
+            'x_selling_price': 0,
+            'x_sale_order_id': order.id,
+            'x_property_type_id': property_type.id,
         })
         ]]></field>
     </record>
-
-    <record model="ir.automation.rule" id="automation_rule_x_estate_property_create_from_sale_order">
+    
+    <record model="base.automation" id="automation_rule_x_estate_property_create_from_sale_order">
         <field name="name">Create property from sale order</field>
         <field name="model_id" ref="sale.model_sale_order"/>
         <field name="trigger">on_state_set</field>
         <field name="trg_selection_field_id" ref="sale.selection__sale_order__state__sale"/>
-        <field name="action_server_ids" eval="[(4, action_x_estate_property_create_from_sale_order.id)]"/>
+        <field name="trigger_field_ids" eval="[(4, ref('sale.field_sale_order__state'))]"/>
+        <field name="action_server_ids" eval="[(4, ref('estate.action_x_estate_property_create_from_sale_order'))]"/>
     </record>
 
 Note that the :ref:`XML IDs <tutorials/define_module_data/xml_id>` to standard Odoo models, fields,
